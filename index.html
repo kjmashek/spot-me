@@ -2,104 +2,396 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Spot Me | Elite Gym Partners</title>
     
-    <!-- 1. Tailwind CSS for Styling -->
+    <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 2. React & Babel (allows us to run React in the browser) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- 3. Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Firebase Compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <style>
-        body { background-color: #020617; margin: 0; font-family: sans-serif; }
-        #root { display: flex; justify-content: center; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: white; overflow: hidden; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .btn-primary { background: #2563eb; transition: all 0.2s; }
+        .btn-primary:hover { background: #3b82f6; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        input, select, textarea { color-scheme: dark; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        // --- Setup Icons ---
-        const { 
-            Heart, X, User, MessageSquare, Dumbbell, Zap, 
-            Search, Activity, LogOut, Mail, Lock, ArrowRight 
-        } = lucide;
+        // --- 1. FIREBASE CONFIG ---
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_ID",
+            appId: "YOUR_APP_ID"
+        };
 
-        function App() {
-            // We use the same state logic from before
-            const [view, setView] = React.useState('auth');
-            const [authMode, setAuthMode] = React.useState('login');
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // --- 2. SEPARATE COMPONENTS (Fixes the typing/focus bug) ---
+
+        const AuthScreen = ({ authStep, setAuthStep }) => {
             const [email, setEmail] = React.useState('');
-            const [password, setPassword] = React.useState('');
+            const [pass, setPass] = React.useState('');
+            const [err, setErr] = React.useState('');
 
-            // Mock Data (Since we aren't using the terminal to install Firebase)
-            const MOCK_PROFILES = [
-                { id: 1, name: "Jordan", age: 27, bio: "Powerlifter focused on SBD totals.", image: "https://images.unsplash.com/photo-1583454110551-21f2fa2adfcd?w=800" },
-                { id: 2, name: "Sarah", age: 25, bio: "Hyrox athlete. Training for my first Pro race.", image: "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=800" }
-            ];
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setErr('');
+                try {
+                    if (authStep === 'login') await auth.signInWithEmailAndPassword(email, pass);
+                    else await auth.createUserWithEmailAndPassword(email, pass);
+                } catch (error) { setErr(error.message); }
+            };
 
-            const AuthScreen = () => (
-                <div className="h-screen bg-slate-950 p-8 flex flex-col justify-center text-white w-full max-w-md border-x border-slate-900">
-                    <div className="mb-12 text-center">
-                        <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
-                            <div dangerouslySetInnerHTML={{ __html: lucide.createIcons({ icons: { Zap: {} } }) }} />
-                            <span className="text-white">⚡</span>
+            if (authStep === 'choice') {
+                return (
+                    <div className="h-screen w-full max-w-md mx-auto p-8 flex flex-col justify-end pb-20">
+                        <div className="mb-auto pt-20 text-center">
+                            <div className="w-16 h-16 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center shadow-2xl mb-6 italic font-black text-2xl">⚡</div>
+                            <h1 className="text-5xl font-black tracking-tighter uppercase italic">Spot Me</h1>
+                            <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em] mt-2">Elite Training Partners</p>
                         </div>
-                        <h1 className="text-4xl font-black tracking-tighter uppercase mb-2">Spot Me</h1>
-                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">Elite Training Partnerships</p>
-                    </div>
-
-                    <div className="space-y-4">
-                        <input 
-                            type="email" 
-                            placeholder="Email Address"
-                            className="w-full bg-slate-900 border border-slate-800 p-4 rounded-2xl font-bold"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-                        <input 
-                            type="password" 
-                            placeholder="Password"
-                            className="w-full bg-slate-900 border border-slate-800 p-4 rounded-2xl font-bold"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                        <button 
-                            onClick={() => setView('swipe')}
-                            className="w-full py-5 bg-blue-600 text-white font-black rounded-2xl tracking-widest uppercase text-xs shadow-xl flex items-center justify-center gap-2"
-                        >
-                            {authMode === 'login' ? 'Enter Arena' : 'Join Squad'}
-                        </button>
-                    </div>
-                </div>
-            );
-
-            const SwipeScreen = () => (
-                <div className="h-screen bg-white w-full max-w-md flex flex-col">
-                    <div className="flex justify-between items-center px-6 py-4 border-b">
-                        <span className="font-black text-xl tracking-tighter text-slate-900 uppercase">SPOT ME</span>
-                    </div>
-                    <div className="flex-1 p-4">
-                        <div className="relative h-full rounded-[2.5rem] overflow-hidden shadow-2xl">
-                            <img src={MOCK_PROFILES[0].image} className="absolute inset-0 w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black p-8 flex flex-col justify-end">
-                                <h2 className="text-4xl font-black text-white">{MOCK_PROFILES[0].name}, {MOCK_PROFILES[0].age}</h2>
-                                <p className="text-slate-300">{MOCK_PROFILES[0].bio}</p>
-                            </div>
+                        <div className="space-y-4">
+                            <button onClick={() => setAuthStep('signup')} className="w-full py-5 btn-primary text-white font-black rounded-2xl uppercase text-xs tracking-widest shadow-xl">Create Account</button>
+                            <button onClick={() => setAuthStep('login')} className="w-full py-5 bg-slate-900 text-white font-black rounded-2xl border border-slate-800 uppercase text-xs tracking-widest">Sign In</button>
                         </div>
                     </div>
-                </div>
-            );
+                );
+            }
 
             return (
-                <div className="w-full flex justify-center">
-                    {view === 'auth' ? <AuthScreen /> : <SwipeScreen />}
+                <div className="h-screen w-full max-w-md mx-auto p-8 flex flex-col justify-center">
+                    <button onClick={() => setAuthStep('choice')} className="mb-8 text-slate-500 text-xs font-bold uppercase tracking-widest text-left">← Back</button>
+                    <h2 className="text-3xl font-black uppercase italic mb-8">{authStep === 'login' ? 'Authorize' : 'Join Squad'}</h2>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <input type="email" value={email} placeholder="Email Address" required className="w-full bg-slate-900 border border-slate-800 p-4 rounded-2xl font-bold outline-none focus:border-blue-600" onChange={e => setEmail(e.target.value)} />
+                        <input type="password" value={pass} placeholder="Password" required className="w-full bg-slate-900 border border-slate-800 p-4 rounded-2xl font-bold outline-none focus:border-blue-600" onChange={e => setPass(e.target.value)} />
+                        {err && <p className="text-red-500 text-[10px] font-bold uppercase text-center">{err}</p>}
+                        <button className="w-full py-5 btn-primary text-white font-black rounded-2xl uppercase text-xs tracking-widest shadow-xl">Continue</button>
+                    </form>
+                </div>
+            );
+        };
+
+        const OnboardingScreen = ({ user, setProfile, setView }) => {
+            const [name, setName] = React.useState('');
+            const [level, setLevel] = React.useState('Intermediate');
+            const [bio, setBio] = React.useState('');
+            const [image, setImage] = React.useState(null);
+
+            const handleImage = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setImage(reader.result);
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const next = async () => {
+                if (!name) return alert("Callsign required");
+                const data = { name, level, bio, image, uid: user.uid };
+                await db.collection('users').doc(user.uid).set(data, { merge: true });
+                setProfile(prev => ({ ...prev, ...data }));
+                setView('preferences');
+            };
+
+            return (
+                <div className="h-screen w-full max-w-md mx-auto p-8 overflow-y-auto hide-scrollbar">
+                    <h2 className="text-3xl font-black uppercase tracking-tighter mb-2 pt-10">Athlete Profile</h2>
+                    <p className="text-blue-500 text-[10px] font-black uppercase tracking-widest mb-10">Step 1 of 2</p>
+                    
+                    <div className="space-y-8 pb-10">
+                        <div className="flex flex-col items-center">
+                            <label className="relative w-40 h-40 rounded-[2.5rem] bg-slate-900 border-2 border-dashed border-slate-800 flex items-center justify-center cursor-pointer overflow-hidden">
+                                {image ? <img src={image} className="w-full h-full object-cover" /> : <span className="text-[10px] font-black uppercase text-slate-500">Add Photo</span>}
+                                <input type="file" className="hidden" accept="image/*" onChange={handleImage} />
+                            </label>
+                        </div>
+
+                        <div className="space-y-4">
+                            <input value={name} placeholder="Your Name" className="w-full bg-slate-900 p-4 rounded-2xl font-bold outline-none border border-slate-800" onChange={e => setName(e.target.value)} />
+                            <select value={level} className="w-full bg-slate-900 p-4 rounded-2xl font-bold outline-none border border-slate-800" onChange={e => setLevel(e.target.value)}>
+                                <option>Beginner</option>
+                                <option>Intermediate</option>
+                                <option>Advanced</option>
+                            </select>
+                            <textarea value={bio} placeholder="Bio / Goals" className="w-full bg-slate-900 p-4 rounded-2xl font-bold outline-none border border-slate-800 h-32" onChange={e => setBio(e.target.value)} />
+                        </div>
+                        <button onClick={next} className="w-full py-5 btn-primary text-white font-black rounded-2xl uppercase text-xs tracking-widest">Next Stage</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const PreferencesScreen = ({ user, setProfile, setView }) => {
+            const [area, setArea] = React.useState('');
+            const [gym, setGym] = React.useState('');
+            const [prefGender, setPrefGender] = React.useState('Either');
+            const [workoutType, setWorkoutType] = React.useState('Bodybuilding');
+
+            const save = async () => {
+                const preferences = { area, gym, prefGender, workoutType };
+                await db.collection('users').doc(user.uid).set({ preferences }, { merge: true });
+                setProfile(prev => ({ ...prev, preferences }));
+                setView('swipe');
+            };
+
+            return (
+                <div className="h-screen w-full max-w-md mx-auto p-8 overflow-y-auto hide-scrollbar">
+                    <h2 className="text-3xl font-black uppercase tracking-tighter mb-2 pt-10">Training Intel</h2>
+                    <p className="text-blue-500 text-[10px] font-black uppercase tracking-widest mb-10">Step 2 of 2</p>
+
+                    <div className="space-y-6">
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Local Area</label>
+                            <input value={area} placeholder="Ex: Downtown LA" className="w-full bg-slate-900 p-4 rounded-2xl font-bold outline-none border border-slate-800" onChange={e => setArea(e.target.value)} />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Primary Gym</label>
+                            <input value={gym} placeholder="Ex: Gold's Gym" className="w-full bg-slate-900 p-4 rounded-2xl font-bold outline-none border border-slate-800" onChange={e => setGym(e.target.value)} />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Partner Preference</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {['Males', 'Females', 'Either'].map(g => (
+                                    <button key={g} onClick={() => setPrefGender(g)} className={`py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${prefGender === g ? 'bg-blue-600 border-blue-600' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>{g}</button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Workout Discipline</label>
+                            <select value={workoutType} className="w-full bg-slate-900 p-4 rounded-2xl font-bold outline-none border border-slate-800" onChange={e => setWorkoutType(e.target.value)}>
+                                <option>Bodybuilding</option>
+                                <option>Powerlifting</option>
+                                <option>CrossFit</option>
+                                <option>Yoga / Mobility</option>
+                                <option>HIIT / Cardio</option>
+                            </select>
+                        </div>
+
+                        <button onClick={save} className="w-full py-5 btn-primary text-white font-black rounded-2xl uppercase text-xs tracking-widest mt-6">Enter Arena</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const EditProfileModal = ({ user, profile, setProfile, setIsEditing }) => {
+            const [form, setForm] = React.useState({ ...profile, ...(profile?.preferences || {}) });
+            
+            const handlePhoto = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setForm({...form, image: reader.result});
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const saveChanges = async () => {
+                const updatedData = {
+                    name: form.name || '',
+                    bio: form.bio || '',
+                    image: form.image || null,
+                    preferences: {
+                        area: form.area || '',
+                        gym: form.gym || '',
+                        prefGender: form.prefGender || 'Either',
+                        workoutType: form.workoutType || 'Bodybuilding'
+                    }
+                };
+                await db.collection('users').doc(user.uid).set(updatedData, { merge: true });
+                setProfile(prev => ({ ...prev, ...updatedData }));
+                setIsEditing(false);
+            };
+
+            return (
+                <div className="absolute inset-0 z-50 bg-slate-950 overflow-y-auto p-6 animate-in slide-in-from-bottom duration-300">
+                    <div className="flex justify-between items-center mb-8">
+                        <h2 className="text-2xl font-black uppercase italic">Edit Profile</h2>
+                        <button onClick={() => setIsEditing(false)} className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Cancel</button>
+                    </div>
+
+                    <div className="space-y-6 pb-20">
+                        <div className="flex flex-col items-center mb-8">
+                            <label className="relative w-32 h-32 rounded-[2rem] bg-slate-900 border-2 border-dashed border-slate-800 flex items-center justify-center cursor-pointer overflow-hidden">
+                                {form.image ? <img src={form.image} className="w-full h-full object-cover" /> : <span className="text-[10px] font-black uppercase text-slate-500 text-center">Change<br/>Photo</span>}
+                                <input type="file" className="hidden" accept="image/*" onChange={handlePhoto} />
+                            </label>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Name</label>
+                                <input value={form.name || ''} className="w-full bg-slate-900 p-4 rounded-2xl font-bold outline-none border border-slate-800" onChange={e => setForm({...form, name: e.target.value})} />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Training Area</label>
+                                <input value={form.area || ''} className="w-full bg-slate-900 p-4 rounded-2xl font-bold outline-none border border-slate-800" onChange={e => setForm({...form, area: e.target.value})} />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Primary Gym</label>
+                                <input value={form.gym || ''} className="w-full bg-slate-900 p-4 rounded-2xl font-bold outline-none border border-slate-800" onChange={e => setForm({...form, gym: e.target.value})} />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Workout Discipline</label>
+                                <select value={form.workoutType || ''} className="w-full bg-slate-900 p-4 rounded-2xl font-bold outline-none border border-slate-800" onChange={e => setForm({...form, workoutType: e.target.value})}>
+                                    <option>Bodybuilding</option>
+                                    <option>Powerlifting</option>
+                                    <option>CrossFit</option>
+                                    <option>Yoga / Mobility</option>
+                                    <option>HIIT / Cardio</option>
+                                </select>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Mission (Bio)</label>
+                                <textarea value={form.bio || ''} className="w-full bg-slate-900 p-4 rounded-2xl font-bold outline-none border border-slate-800 h-24" onChange={e => setForm({...form, bio: e.target.value})} />
+                            </div>
+                        </div>
+                        <button onClick={saveChanges} className="w-full py-5 btn-primary text-white font-black rounded-2xl uppercase text-xs tracking-widest shadow-xl">Save Athlete Data</button>
+                    </div>
+                </div>
+            );
+        };
+
+
+        // --- 3. MAIN APP ROUTER ---
+
+        function App() {
+            const [user, setUser] = React.useState(null);
+            const [profile, setProfile] = React.useState(null);
+            const [loading, setLoading] = React.useState(true);
+            const [view, setView] = React.useState('auth'); 
+            const [authStep, setAuthStep] = React.useState('choice');
+            const [isEditing, setIsEditing] = React.useState(false);
+
+            React.useEffect(() => {
+                const unsubscribe = auth.onAuthStateChanged(async (u) => {
+                    setUser(u);
+                    if (u) {
+                        const doc = await db.collection('users').doc(u.uid).get();
+                        if (doc.exists) {
+                            const data = doc.data();
+                            setProfile(data);
+                            if (!data.preferences) setView('preferences');
+                            else setView('swipe');
+                        } else {
+                            setView('onboarding');
+                        }
+                    } else {
+                        setView('auth');
+                        setAuthStep('choice');
+                    }
+                    setLoading(false);
+                });
+                return () => unsubscribe();
+            }, []);
+
+            if (loading) return <div className="h-screen w-full flex items-center justify-center bg-slate-950"><div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>;
+
+            return (
+                <div className="w-full h-screen bg-slate-950 flex justify-center">
+                    {view === 'auth' && <AuthScreen authStep={authStep} setAuthStep={setAuthStep} />}
+                    {view === 'onboarding' && <OnboardingScreen user={user} setProfile={setProfile} setView={setView} />}
+                    {view === 'preferences' && <PreferencesScreen user={user} setProfile={setProfile} setView={setView} />}
+                    
+                    {['swipe', 'matches', 'profile'].includes(view) && (
+                        <div className="w-full max-w-md h-screen flex flex-col relative border-x border-slate-900">
+                            {isEditing && <EditProfileModal user={user} profile={profile} setProfile={setProfile} setIsEditing={setIsEditing} />}
+                            
+                            {/* App Header */}
+                            <div className="p-6 flex justify-between items-center glass z-20">
+                                <span className="font-black text-xl italic tracking-tighter text-white">SPOT ME</span>
+                                <div className="px-3 py-1 bg-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest">{profile?.preferences?.workoutType || "ATHLETE"}</div>
+                            </div>
+
+                            {/* Main Views */}
+                            <div className="flex-1 overflow-y-auto hide-scrollbar p-4">
+                                {view === 'swipe' && (
+                                    <div className="h-full flex flex-col">
+                                        <div className="flex-1 rounded-[3rem] bg-slate-900 overflow-hidden relative shadow-2xl">
+                                            <img src="https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=800" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 p-8 flex flex-col justify-end">
+                                                <h3 className="text-4xl font-black uppercase tracking-tighter">Sarah, 26</h3>
+                                                <p className="text-blue-400 font-bold uppercase text-[10px] tracking-widest mb-2">{profile?.preferences?.gym || "Gold's Gym"}</p>
+                                                <p className="text-slate-300 text-sm">Looking for a {profile?.preferences?.workoutType || "workout"} partner for heavy sessions.</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-center gap-6 py-6 text-2xl">
+                                            <button className="w-16 h-16 rounded-full glass border border-white/10">✕</button>
+                                            <button className="w-16 h-16 rounded-full btn-primary shadow-xl shadow-blue-900/40">🏋️</button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {view === 'matches' && (
+                                    <div className="text-center py-20 opacity-20 font-black uppercase text-xs tracking-widest">No Active Spotters</div>
+                                )}
+
+                                {view === 'profile' && (
+                                    <div className="py-8 animate-fade-in">
+                                        <div className="text-center mb-8">
+                                            <div className="w-32 h-32 bg-slate-900 rounded-[2.5rem] mx-auto mb-6 overflow-hidden border-4 border-blue-600 shadow-2xl">
+                                                {profile?.image ? <img src={profile.image} className="w-full h-full object-cover" /> : <span className="text-4xl leading-[8rem]">👤</span>}
+                                            </div>
+                                            <h2 className="text-3xl font-black uppercase italic">{profile?.name}</h2>
+                                            <p className="text-blue-500 font-black text-[10px] tracking-[0.3em] uppercase mt-2">{profile?.level} Athlete</p>
+                                        </div>
+
+                                        <div className="space-y-4 px-2">
+                                            <div className="glass p-5 rounded-3xl">
+                                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Training Intel</h4>
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase">Primary Gym</span>
+                                                        <span className="text-sm font-black">{profile?.preferences?.gym}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase">Local Area</span>
+                                                        <span className="text-sm font-black">{profile?.preferences?.area}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase">Partner Pref</span>
+                                                        <span className="text-sm font-black">{profile?.preferences?.prefGender}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <button onClick={() => setIsEditing(true)} className="w-full py-4 bg-white/5 text-white border border-white/10 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-white/10">Modify Profile</button>
+                                            <button onClick={() => auth.signOut()} className="w-full py-4 bg-red-950/20 text-red-500 border border-red-900/50 rounded-2xl font-black uppercase text-[10px] tracking-widest">Terminate Session</button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Navbar */}
+                            <div className="h-24 glass flex justify-around items-center px-10 border-t border-white/5">
+                                <button onClick={() => setView('swipe')} className={`text-2xl transition-all ${view === 'swipe' ? 'scale-125 opacity-100' : 'opacity-30'}`}>🔥</button>
+                                <button onClick={() => setView('matches')} className={`text-2xl transition-all ${view === 'matches' ? 'scale-125 opacity-100' : 'opacity-30'}`}>💬</button>
+                                <button onClick={() => setView('profile')} className={`text-2xl transition-all ${view === 'profile' ? 'scale-125 opacity-100' : 'opacity-30'}`}>👤</button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
