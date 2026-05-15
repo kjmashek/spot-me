@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spot Me | Elite Gym Partners</title>
+    
+    <!-- 1. Tailwind CSS for Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. React & Babel (allows us to run React in the browser) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- 3. Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body { background-color: #020617; margin: 0; font-family: sans-serif; }
+        #root { display: flex; justify-content: center; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // --- Setup Icons ---
+        const { 
+            Heart, X, User, MessageSquare, Dumbbell, Zap, 
+            Search, Activity, LogOut, Mail, Lock, ArrowRight 
+        } = lucide;
+
+        function App() {
+            // We use the same state logic from before
+            const [view, setView] = React.useState('auth');
+            const [authMode, setAuthMode] = React.useState('login');
+            const [email, setEmail] = React.useState('');
+            const [password, setPassword] = React.useState('');
+
+            // Mock Data (Since we aren't using the terminal to install Firebase)
+            const MOCK_PROFILES = [
+                { id: 1, name: "Jordan", age: 27, bio: "Powerlifter focused on SBD totals.", image: "https://images.unsplash.com/photo-1583454110551-21f2fa2adfcd?w=800" },
+                { id: 2, name: "Sarah", age: 25, bio: "Hyrox athlete. Training for my first Pro race.", image: "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=800" }
+            ];
+
+            const AuthScreen = () => (
+                <div className="h-screen bg-slate-950 p-8 flex flex-col justify-center text-white w-full max-w-md border-x border-slate-900">
+                    <div className="mb-12 text-center">
+                        <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                            <div dangerouslySetInnerHTML={{ __html: lucide.createIcons({ icons: { Zap: {} } }) }} />
+                            <span className="text-white">⚡</span>
+                        </div>
+                        <h1 className="text-4xl font-black tracking-tighter uppercase mb-2">Spot Me</h1>
+                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">Elite Training Partnerships</p>
+                    </div>
+
+                    <div className="space-y-4">
+                        <input 
+                            type="email" 
+                            placeholder="Email Address"
+                            className="w-full bg-slate-900 border border-slate-800 p-4 rounded-2xl font-bold"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                        <input 
+                            type="password" 
+                            placeholder="Password"
+                            className="w-full bg-slate-900 border border-slate-800 p-4 rounded-2xl font-bold"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                        <button 
+                            onClick={() => setView('swipe')}
+                            className="w-full py-5 bg-blue-600 text-white font-black rounded-2xl tracking-widest uppercase text-xs shadow-xl flex items-center justify-center gap-2"
+                        >
+                            {authMode === 'login' ? 'Enter Arena' : 'Join Squad'}
+                        </button>
+                    </div>
+                </div>
+            );
+
+            const SwipeScreen = () => (
+                <div className="h-screen bg-white w-full max-w-md flex flex-col">
+                    <div className="flex justify-between items-center px-6 py-4 border-b">
+                        <span className="font-black text-xl tracking-tighter text-slate-900 uppercase">SPOT ME</span>
+                    </div>
+                    <div className="flex-1 p-4">
+                        <div className="relative h-full rounded-[2.5rem] overflow-hidden shadow-2xl">
+                            <img src={MOCK_PROFILES[0].image} className="absolute inset-0 w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black p-8 flex flex-col justify-end">
+                                <h2 className="text-4xl font-black text-white">{MOCK_PROFILES[0].name}, {MOCK_PROFILES[0].age}</h2>
+                                <p className="text-slate-300">{MOCK_PROFILES[0].bio}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="w-full flex justify-center">
+                    {view === 'auth' ? <AuthScreen /> : <SwipeScreen />}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
