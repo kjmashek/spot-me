@@ -11,10 +11,10 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Firebase Compat -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<!-- Firebase v8 Stable CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -29,24 +29,27 @@
 <body>
     <div id="root"></div>
 
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+    <script type="text/babel">
+        // --- 1. FIREBASE CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAMYPZA61UbYo5uLbeRxmu2WAKL1XJF798",
+            authDomain: "spot-me-6e224.firebaseapp.com",
+            projectId: "spot-me-6e224",
+            storageBucket: "spot-me-6e224.firebasestorage.app",
+            messagingSenderId: "855951936582",
+            appId: "1:855951936582:web:8ac0f9dbd4f92042804e47"
+        };
 
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyAMYPZA61UbYo5uLbeRxmu2WAKL1XJF798",
-    authDomain: "spot-me-6e224.firebaseapp.com",
-    projectId: "spot-me-6e224",
-    storageBucket: "spot-me-6e224.firebasestorage.app",
-    messagingSenderId: "855951936582",
-    appId: "1:855951936582:web:8ac0f9dbd4f92042804e47"
-  };
+        // Initialize and explicitly lock the authentication network endpoints
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        
+        // Fix for local network cross-origin restrictions
+        auth.config.authDomain = "spot-me-6e224.firebaseapp.com";
+        
+        const db = firebase.firestore();
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
+        firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
@@ -180,7 +183,7 @@
                             <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Partner Preference</label>
                             <div className="grid grid-cols-3 gap-2">
                                 {['Males', 'Females', 'Either'].map(g => (
-                                    <button key={g} onClick={() => setPrefGender(g)} className={`py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${prefGender === g ? 'bg-blue-600 border-blue-600' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>{g}</button>
+                                    <button key={g} type="button" onClick={() => setPrefGender(g)} className={`py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${prefGender === g ? 'bg-blue-600 border-blue-600' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>{g}</button>
                                 ))}
                             </div>
                         </div>
