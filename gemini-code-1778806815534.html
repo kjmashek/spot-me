@@ -29,18 +29,25 @@
 <body>
     <div id="root"></div>
 
-    <script type="text/babel">
-        // --- 1. FIREBASE CONFIG ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyAMYPZA61UbYo5uLbeRxmu2WAKL1XJF798",
-            authDomain: "spot-me-6e224.firebaseapp.com",
-            projectId: "spot-me-6e224",
-            storageBucket: "spot-me-6e224.firebasestorage.app",
-            messagingSenderId: "855951936582",
-            appId: "1:855951936582:web:8ac0f9dbd4f92042804e47"
-        };
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-        firebase.initializeApp(firebaseConfig);
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyAMYPZA61UbYo5uLbeRxmu2WAKL1XJF798",
+    authDomain: "spot-me-6e224.firebaseapp.com",
+    projectId: "spot-me-6e224",
+    storageBucket: "spot-me-6e224.firebasestorage.app",
+    messagingSenderId: "855951936582",
+    appId: "1:855951936582:web:8ac0f9dbd4f92042804e47"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+</script>
         const auth = firebase.auth();
         const db = firebase.firestore();
 
